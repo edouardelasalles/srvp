@@ -2,6 +2,8 @@
 
 Official implementation of the paper Stochastic Latent Residual Video Prediction (Jean-Yves Franceschi*, Edouard Delasalles*, Mickael Chen, Sylvain Lamprier, Patrick Gallinari).
 
+## [Preprint](https://arxiv.org/abs/2002.09219)
+
 ## [Project Website](https://sites.google.com/view/srvp/)
 
 ## Requirements
