@@ -6,6 +6,8 @@ Official implementation of the paper Stochastic Latent Residual Video Prediction
 
 ## [Project Website](https://sites.google.com/view/srvp/)
 
+## [Pretrained Models](https://data.lip6.fr/srvp/)
+
 ## Requirements
 
 All models were trained with Python 3.7.6 and CUDA 10.1 on PyTorch 1.4.0.
@@ -109,7 +111,7 @@ To evaluate a trained model, the script `test.py` should be used as follows:
 python test.py --data_dir $DATADIR --xp_dir $XPDIR --lpips_dir $LPIPSDIR
 ```
 
-where `$XPDIR` is a directory containing a checkpoint and the corresponding `json` configuration file, `$DATADIR` is the directory containing the test set, and `$LPIPSDIR` is a directory where [LPIPS weights](https://github.com/richzhang/PerceptualSimilarity/tree/master/models/weights) are downloaded.
+where `$XPDIR` is a directory containing a checkpoint and the corresponding `json` configuration file (see the pretrained models for an example), `$DATADIR` is the directory containing the test set, and `$LPIPSDIR` is a directory where [LPIPS weights](https://github.com/richzhang/PerceptualSimilarity/tree/master/models/weights) are downloaded.
 
 To run the evaluation on GPU, use the option `--device $DEVICE`.
 
@@ -117,8 +119,3 @@ Please also refer to the help message of `test.py`:
 ```bash
 python test.py --help
 ```
-
-
-## Pretrained models
-
-Pretrained models and associated configuration files will be made available soon.
