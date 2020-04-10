@@ -139,7 +139,7 @@ def main(opt):
     cond = []
     cond_rec = []
     gt = []
-    random_samples = [[] for _ in range(5)]
+    random_samples = [[] for _ in range(min(5, opt.n_samples))]
     # Evaluation is done by batch
     for batch in tqdm(test_loader, ncols=80, desc='evaluation'):
         # Data
