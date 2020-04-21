@@ -123,8 +123,6 @@ def create_args():
                help='Number val iterations.')
     eval_p.add('--n_samples_test', type=int, metavar='NB', default=100,
                help='Number of samples from the model to draw for the comparison with the ground truth.')
-    data_p.add('--seq_len_test', type=int, metavar='LEN', required=True,
-               help='Length of test sequences.')
     eval_p.add('--lpips_model_path', type=str, metavar='PATH', default='',
                help='Directory path of models used to compute the LPIPS metric.')
     eval_p.add('--save_path', type=str, metavar='PATH', required=True,
