@@ -80,8 +80,8 @@ class MovingMNIST(VideoDataset):
         self.train = train
 
     def _filter(self, data):
-        return self.__class__(data, self.frame_size, self.num_digits, self.seq_len, self.max_speed, self.deterministic,
-                              self.train)
+        return self.__class__(data, self.frame_size, self.seq_len, self.max_speed, self.deterministic,
+                              self.num_digits, self.train)
 
     def __len__(self):
         if self.train:
