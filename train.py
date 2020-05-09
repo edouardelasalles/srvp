@@ -91,7 +91,7 @@ def main(opt):
     # Setup
     ##################################################################################################################
     opt.hostname = os.uname()[1]
-    # -- Device handling (CPU, GPU, multi GPU)
+    # Device handling (CPU, GPU, multi GPU)
     if opt.device is None:
         device = torch.device('cpu')
         opt.n_gpu = 0

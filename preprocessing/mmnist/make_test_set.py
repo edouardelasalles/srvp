@@ -48,11 +48,10 @@ if __name__ == "__main__":
     # Fix random seed
     np.random.seed(args.seed)
 
-    # Load digits and perform as many shuffle as there are digits to produce as many tuples of digits as there are
-    # digits in the MNIST dataset
+    # Load digits and shuffle them
     digits = datasets.MNIST(args.data_dir, train=False, download=True)
-    digits_idx = [np.random.permutation(len(digits)) for _ in range(args.digits)]
-    # Make random trajectories using the dataset code
+    digits_idx = np.random.permutation(len(digits))
+    # Random trajectories are made using the dataset code
     trajectory_sampler = MovingMNIST([], args.frame_size, args.seq_len, args.max_speed, args.deterministic,
                                      args.digits, True)
     # Register videos, latent space (position, speed), labels of digits and digit images
@@ -60,15 +59,15 @@ if __name__ == "__main__":
     test_latents = []
     test_labels = []
     test_objects = []
-    # The size of the testing set is the total number of testing digits in MNIST
-    for i in trange(len(digits)):
+    # The size of the testing set is the total number of testing digits in MNIST divided by the number of digits
+    for i in trange(len(digits) // args.digits):
         x = np.zeros((args.seq_len, args.frame_size, args.frame_size), dtype=np.float32)
         latents = []
         labels = []
         objects = []
-        # Choose the digits randomly chosen for sequence i and compute their trajectories
+        # Pick the digits randomly chosen for sequence i and generate their trajectories
         for n in range(args.digits):
-            img, label = digits[digits_idx[n][i]]
+            img, label = digits[digits_idx[i * args.digits + n]]
             img = np.array(img, dtype=np.uint8)
             trajectory = trajectory_sampler._compute_trajectory(*img.shape)
             latents.append(np.array(trajectory))
