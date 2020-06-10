@@ -93,6 +93,6 @@ if __name__ == "__main__":
     print(f'Saving testset at {join(args.data_dir, fname)}')
     # Create the directory if needed
     if not os.path.isdir(args.data_dir):
-        os.makedires(args.data_dir)
+        os.makedirs(args.data_dir)
     np.savez_compressed(join(args.data_dir, fname),
                         sequences=test_videos, latents=test_latents, labels=test_labels, digits=test_objects)
