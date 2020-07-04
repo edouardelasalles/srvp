@@ -10,10 +10,12 @@ classes = ('boxing', 'handclapping', 'handwaving', 'jogging', 'running', 'walkin
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser('''
-        Generates training and testing videos for the KTH dataset from the original videos,
-        and stores them in folder \'processed_${SIZE}\' in the same directory.
-        ''')
+    parser = argparse.ArgumentParser(
+        prog='KTH preprocessing.',
+        description='Generates training and testing videos for the KTH dataset from the original videos, and stores \
+                     them in folder `processed_${SIZE}` in the same directory.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument('--data_dir', type=str, metavar='DIR', required=True,
                         help='Folder where videos from the original dataset are stored.')
     parser.add_argument('--image_size', type=int, metavar='SIZE', default=64,

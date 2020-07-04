@@ -24,10 +24,15 @@ def load_dataset(config, train):
 
     Parameters
     ----------
-    config : DotDict
+    config : helper.DotDict
         Configuration to use.
     train : bool
         Whether to load the training or testing dataset.
+
+    Returns
+    -------
+    data.base.VideoDataset
+        Dataset corresponding to the input configuration.
     """
     name = config.dataset
     if name == 'smmnist':
@@ -41,22 +46,27 @@ def load_dataset(config, train):
         from data.human import Human
         return Human.make_dataset(config.data_dir, config.nx, config.seq_len, config.subsampling, train)
     if name == 'bair':
-        from data.bair import Bair
-        return Bair.make_dataset(config.data_dir, config.seq_len, train)
-    raise ValueError(f'No dataset named `{name}`')
+        from data.bair import BAIR
+        return BAIR.make_dataset(config.data_dir, config.seq_len, train)
+    raise ValueError(f'No dataset named \'{name}\'')
 
 
 def collate_fn(videos):
     """
-    Collate function for the pytorch data loader.
+    Collate function for the PyTorch data loader.
 
-    Merge all batch videos in a tensor with shape (length, batch, channels, width, height) and convert their pixel
+    Merges all batch videos in a tensor with shape (length, batch, channels, width, height) and converts their pixel
     values to [0, 1].
 
     Parameters
     ----------
     videos : list
         List of uint8 NumPy arrays representing videos with shape (length, batch, width, height, channels).
+
+    Returns
+    -------
+    torch.*.Tensor
+        Batch of videos with shape (length, batch, channels, width, height) and float values lying in [0, 1].
     """
     seq_len = len(videos[0])
     batch_size = len(videos)
@@ -78,21 +88,35 @@ class VideoDataset(object):
     """
     Abstract class of a video dataset.
 
-    Requires an attribute 'data' which is a list containing the dataset data (videos).
+    Requires an attribute 'data' which is a list containing the dataset data.
+
+    data : list
+        List containing the dataset data.
     """
     def get_fold(self, fold):
         """
-        Selects a chunk of the dataset.
+        Selects a chunk of the dataset by splitting the dataset data depending on the chosen fold.
+
+        'test' does not change the dataset but only checks whether it is in test mode.
+
+        When training, 'train' randomly selects 95% of the attribute list 'data' (corresponding to examples fed to the
+        model during training) with respect to a fixed random seed, and 'val' selects the remaining 5% (corresponding
+        to the validation set).
 
         Parameters
         ----------
         fold : str
             'train', 'val', or 'test', depending on the dataset chunk to select.
+
+        Returns
+        -------
+        data.base.VideoDataset
+            Same dataset with data restricted to the given fold.
         """
         if fold in ('train', 'val'):
             # Select 95% of the training dataset for training, and 5% for evaluation purposes
             assert self.train
-            # Random selection
+            # Random selection with fixed seed
             rng = np.random.RandomState(42)
             rand_ids = list(range(len(self.data)))
             rng.shuffle(rand_ids)
@@ -122,5 +146,10 @@ class VideoDataset(object):
         ----------
         data : list
             List containing the new dataset data.
+
+        Returns
+        -------
+        data.base.VideoDataset
+            Same dataset with original data replaced by the input data.
         """
         raise NotImplementedError

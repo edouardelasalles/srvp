@@ -29,6 +29,11 @@ def activation_factory(name):
     name : str
         'relu', 'leaky_relu', 'elu', 'sigmoid', or 'tanh'. Adds the corresponding activation function after the
         convolution.
+
+    Returns
+    -------
+    torch.nn.Module
+        Element-wise activation layer.
     """
     if name == 'relu':
         return nn.ReLU(inplace=True)
@@ -40,12 +45,15 @@ def activation_factory(name):
         return nn.Sigmoid()
     if name == 'tanh':
         return nn.Tanh()
-    raise ValueError(f'Activation function `{name}` not yet implemented')
+    raise ValueError(f'Activation function \'{name}\' not yet implemented')
 
 
 def init_weight(m, init_type='normal', init_gain=0.02):
     """
     Initializes the input module with the given parameters.
+
+    Only deals with Conv2d, ConvTranspose2d and Linear layers. Two-dimensional batch normalizations are initialized
+    as well with unit weight and zero bias.
 
     Parameters
     ----------
@@ -84,8 +92,8 @@ def make_normal_from_raw_params(raw_params, scale_stddev=1, dim=-1, eps=1e-8):
 
     Parameters
     ----------
-    raw_params : torch.Tensor
-        Tensor containing the Gaussian mean and a raw scale parameter.
+    raw_params : torch.*.Tensor
+        Tensor containing the Gaussian mean and a raw scale parameter on a given dimension.
     scale_stddev : float
         Multiplier of the final scale parameter of the Gaussian.
     dim : int
@@ -96,7 +104,7 @@ def make_normal_from_raw_params(raw_params, scale_stddev=1, dim=-1, eps=1e-8):
     Returns
     -------
     torch.distributions.Normal
-        Normal distributions with the input mean and eps + softplus(raw scale) * scale_stddev as scale.
+        Normal distribution with the input mean and eps + softplus(raw scale) * scale_stddev as standard deviation.
     """
     loc, raw_scale = torch.chunk(raw_params, 2, dim)
     assert loc.shape[dim] == raw_scale.shape[dim]
@@ -111,29 +119,42 @@ def rsample_normal(raw_params, scale_stddev=1):
 
     Parameters
     ----------
-    raw_params : torch.Tensor
-        Tensor containing the Gaussian mean and a raw scale parameter.
+    raw_params : torch.*.Tensor
+        Tensor containing a Gaussian mean and a raw scale parameter on its last dimension.
     scale_stddev : float
         Multiplier of the final scale parameter of the Gaussian.
+
+    Returns
+    -------
+    torch.*.Tensor
+        Sample from the normal distribution with the input mean and eps + softplus(raw scale) * scale_stddev as
+        standard deviation.
     """
     normal = make_normal_from_raw_params(raw_params, scale_stddev=scale_stddev)
     sample = normal.rsample()
     return sample
 
 
-def neg_logprob(raw_params, data, scale=1):
+def neg_logprob(loc, data, scale=1):
     """
-    Computes the negative log density function of a given input with respect to a normal distribution created from the
-    input parameters.
+    Computes the negative log density function of a given input with respect to a normal distribution created from
+    given parameters.
 
     Parameters
     ----------
-    raw_params : torch.Tensor
-        Tensor containing the Gaussian mean and a raw scale parameter.
-    data : torch.Tensor
-        Computes the log density function of this tensor.
+    loc : torch.*.Tensor
+        Tensor containing the mean of the Gaussian on its last dimension.
+    data : torch.*.Tensor
+        Computes the log density function of this tensor with respect to the Gaussian distribution of input mean and
+        standard deviation.
     scale : float
-        Multiplier of the final scale parameter of the Gaussian.
+        Standard deviation of the Gaussian.
+
+    Returns
+    -------
+    torch.*.Tensor
+        Sample from the normal distribution with the input mean and eps + softplus(raw scale) * scale_stddev as
+        standard deviation.
     """
-    obs_distrib = distrib.Normal(raw_params, scale)
+    obs_distrib = distrib.Normal(loc, scale)
     return -obs_distrib.log_prob(data)

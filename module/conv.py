@@ -22,7 +22,7 @@ from module import utils
 
 def encoder_factory(name, nx, nc, nh, nf):
     """
-    Creates an encoder with the given parameter according the input architecture name.
+    Creates an encoder with the given parameters according the input architecture name.
 
     Parameters
     ----------
@@ -36,17 +36,22 @@ def encoder_factory(name, nx, nc, nh, nf):
         Number of dimensions of the output flat vector.
     nf : int
         Number of filters per channel of the first convolution.
+
+    Returns
+    -------
+    module.conv.BaseEncoder
+        Either a module.conv.DCGAN64Encoder or a module.conv.VGG64Encoder depending on the chosen architecture.
     """
     if name == 'dcgan':
         return DCGAN64Encoder(nc, nh, nf)
     if name == 'vgg':
         return VGG64Encoder(nc, nh, nf)
-    raise ValueError(f'No encoder named `{name}`')
+    raise ValueError(f'No encoder named \'{name}\'')
 
 
 def decoder_factory(name, nx, nc, ny, nf, skip=False):
     """
-    Creates a decoder with the given parameter according the input architecture name.
+    Creates a decoder with the given parameters according the input architecture name.
 
     Parameters
     ----------
@@ -60,12 +65,17 @@ def decoder_factory(name, nx, nc, ny, nf, skip=False):
         Number of dimensions of the input flat vector.
     nf : int
         Number of filters per channel of the first convolution of the mirror encoder architecture.
+
+    Returns
+    -------
+    module.conv.BaseDecoder
+        Either a module.conv.DCGAN64Decoder or a module.conv.VGG64Decoder depending on the chosen architecture.
     """
     if name == 'dcgan':
         return DCGAN64Decoder(nc, ny, nf, skip)
-    elif name == 'vgg':
+    if name == 'vgg':
         return VGG64Decoder(nc, ny, nf, skip)
-    raise ValueError(f'No decoder named `{name}`')
+    raise ValueError(f'No decoder named \'{name}\'')
 
 
 def make_conv_block(conv, activation, bn=True):
@@ -77,10 +87,16 @@ def make_conv_block(conv, activation, bn=True):
     conv : torch.nn.Module
         Convolutional block.
     activation : str
-        'relu', 'leaky_relu', 'elu', 'sigmoid', or 'tanh'. Adds the corresponding activation function after the
-        convolution.
+        'relu', 'leaky_relu', 'elu', 'sigmoid', 'tanh', or 'none'. Adds the corresponding activation function, or no
+        activation if 'none' is chosen, after the convolution.
     bn : bool
         Whether to add batch normalization after the activation.
+
+    Returns
+    -------
+    torch.nn.Sequential
+        Sequence of the input convolutional block, the potentially chosen activation function, and the potential batch
+        normalization.
     """
     out_channels = conv.out_channels
     modules = [conv]
@@ -114,10 +130,18 @@ class BaseEncoder(nn.Module):
         """
         Parameters
         ----------
-        x : torch.Tensor
+        x : torch.*.Tensor
             Encoder input.
         return_skip : bool
             Whether to extract and return, besides the network output, skip connections.
+
+        Returns
+        -------
+        torch.*.Tensor
+            Encoder output as a tensor of shape (batch, size).
+        list
+            Only if return_skip is True. List of skip connections represented as torch.*.Tensor corresponding to each
+            convolutional block in reverse order (from the deepest to the shallowest convolutional block).
         """
         skips = []
         h = x
@@ -212,6 +236,12 @@ class BaseDecoder(nn.Module):
         Whether to include skip connections into the decoder.
     """
     def __init__(self, ny, skip):
+        """
+        Parameters
+        ----------
+        ny : int
+            Number of dimensions of the input flat vector.
+        """
         super(BaseDecoder, self).__init__()
         self.ny = ny
         self.skip = skip
@@ -220,12 +250,18 @@ class BaseDecoder(nn.Module):
         """
         Parameters
         ----------
-        z : torch.Tensor
+        z : torch.*.Tensor
             Decoder input.
         skip : list
-            List of tensors representing skip connections.
+            List of torch.*.Tensor representing skip connections in the same order as the decoder convolutional
+            blocks. Must be None when skip connections are not allowed.
         sigmoid : bool
             Whether to apply a sigmoid at the end of the decoder.
+
+        Returns
+        -------
+        torch.*.Tensor
+            Decoder output as a frame of shape (batch, channels, width, height).
         """
         assert skip is None and not self.skip or self.skip and skip is not None
         h = self.first_upconv(z.view(*z.shape, 1, 1))
@@ -254,7 +290,8 @@ class DCGAN64Decoder(BaseDecoder):
         nf : int
             Number of filters per channel of the first convolution of the mirror encoder architecture.
         skip : list
-            List of tensors representing skip connections.
+            List of torch.*.Tensor representing skip connections in the same order as the decoder convolutional
+            blocks. Must be None when skip connections are not allowed.
         """
         super(DCGAN64Decoder, self).__init__(ny, skip)
         # decoder
@@ -283,7 +320,8 @@ class VGG64Decoder(BaseDecoder):
         nf : int
             Number of filters per channel of the first convolution of the mirror encoder architecture.
         skip : list
-            List of tensors representing skip connections.
+            List of torch.*.Tensor representing skip connections in the same order as the decoder convolutional
+            blocks. Must be None when skip connections are not allowed.
         """
         super(VGG64Decoder, self).__init__(ny, skip)
         # decoder

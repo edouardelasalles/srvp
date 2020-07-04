@@ -85,9 +85,9 @@ class MovingMNIST(VideoDataset):
 
     def __len__(self):
         if self.train:
-            # Arbitrary number
+            # Arbitrary number.
             # The number is a trade-off for max efficiency
-            # If too low, it is not good for batch size and multi threaded dataloader
+            # If too low, it is not good for batch size and multi-threaded dataloader
             # If too high, it is not good for shuffling and sampling
             return 500000
         return len(self.data)
@@ -176,6 +176,12 @@ class MovingMNIST(VideoDataset):
             Minimum y coordinate allowed.
         y_max : int
             Maximum y coordinate allowed.
+
+        Returns
+        -------
+        tuple
+            Tuples (posx, poxy, dx, dy) of the position and speed of the moving object after a time unit. Positions
+            refer to the lower left corner of the object.
         """
         # Check collision on all four edges
         left_edge = (sx < x_min - self.eps)
@@ -312,6 +318,10 @@ class MovingMNIST(VideoDataset):
             Number of digits in each video.
         train : bool
             Whether to use the training or testing dataset.
+
+        Returns
+        -------
+        data.mmnist.MovingMNIST
         """
         if train:
             # When training, only register training MNIST digits

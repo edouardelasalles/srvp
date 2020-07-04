@@ -18,24 +18,29 @@ import torch.nn as nn
 from module import utils
 
 
-def make_lin_block(ninp, nout, activation):
+def make_lin_block(n_inp, n_out, activation):
     """
     Creates a linear block formed by an activation function and a linear operation.
 
     Parameters
     ----------
-    ninp : int
+    n_inp : int
         Input dimension.
-    nout : int
+    n_out : int
         Output dimension.
     activation : str
-        'relu', 'leaky_relu', 'elu', 'sigmoid', 'tanh', or 'none'. Adds the corresponding activation function before
-        the linear operation.
+        'relu', 'leaky_relu', 'elu', 'sigmoid', 'tanh', or 'none'. Adds the corresponding activation function, or no
+        activation if 'none' is chosen,  before the linear operation.
+
+    Returns
+    -------
+    torch.nn.Sequential
+        Sequence of the potentially chosen activation function and the input linear block.
     """
     modules = []
     if activation != 'none':
         modules.append(utils.activation_factory(activation))
-    modules.append(nn.Linear(ninp, nout))
+    modules.append(nn.Linear(n_inp, n_out))
     return nn.Sequential(*modules)
 
 
@@ -43,32 +48,43 @@ class MLP(nn.Module):
     """
     Module implementing an MLP.
     """
-    def __init__(self, ninp, nhid, nout, nlayers, activation='relu'):
+    def __init__(self, n_inp, n_hid, n_out, n_layers, activation='relu'):
         """
         Parameters
         ----------
-        ninp : int
+        n_inp : int
             Input dimension.
-        nhid : int
+        n_hid : int
             Number of dimensions in intermediary layers.
-        nout : int
+        n_out : int
             Output dimension.
-        nlayers : int
+        n_layers : int
             Number of layers in the MLP.
         activation : str
-            'relu', 'leaky_relu', 'elu', 'sigmoid', or 'tanh'. Adds the corresponding activation function before the
-            linear operation.
+            'relu', 'leaky_relu', 'elu', 'sigmoid', or 'tanh'. Adds the corresponding activation function before every
+            linear operation but the first one.
         """
         super().__init__()
-        assert nhid == 0 or nlayers > 1
+        assert n_hid == 0 or n_layers > 1
         modules = [
-            make_lin_block(
-                ninp=ninp if il == 0 else nhid,
-                nout=nout if il == nlayers - 1 else nhid,
-                activation=activation if il > 0 else 'none',
-            ) for il in range(nlayers)
+            make_lin_block(n_inp if il == 0 else n_hid, n_out if il == n_layers - 1 else n_hid,
+                           activation if il > 0 else 'none')
+            for il in range(n_layers)
         ]
         self.module = nn.Sequential(*modules)
 
     def forward(self, x):
+        """
+        Output of the MLP.
+
+        Parameters
+        ----------
+        x : torch.*.Tensor
+            Input of shape (batch, n_inp).
+
+        Returns
+        -------
+        torch.*.Tensor
+            Output of shape (batch, n_out).
+        """
         return self.module(x)

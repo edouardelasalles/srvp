@@ -39,10 +39,10 @@ def fvd(real, fake):
 
     Parameters
     ----------
-    real : torch.Tensor
+    real : torch.*.Tensor
         CPU tensor representing samples from the real distribution of shape (length, batch, channels, width, height)
         with values in [0, 1].
-    fake : torch.Tensor
+    fake : torch.*.Tensor
         CPU tensor representing samples from the fake distribution of shape (length, batch, channels, width, height)
         with values in [0, 1].
     """

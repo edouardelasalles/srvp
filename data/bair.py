@@ -22,7 +22,7 @@ from PIL import Image
 from data.base import VideoDataset
 
 
-class Bair(VideoDataset):
+class BAIR(VideoDataset):
     """
     BAIR dataset.
 
@@ -60,7 +60,7 @@ class Bair(VideoDataset):
         self.train = train
 
     def _filter(self, data):
-        return Bair(data, self.seq_len, self.train)
+        return BAIR(data, self.seq_len, self.train)
 
     def __getitem__(self, index):
         vid = self.data[index]
@@ -85,6 +85,10 @@ class Bair(VideoDataset):
             Number of frames to produce.
         train : bool
             Whether to use the training or testing dataset.
+
+        Returns
+        -------
+        data.bair.BAIR
         """
         # Select the right fold (train / test)
         if train:
@@ -92,11 +96,9 @@ class Bair(VideoDataset):
         else:
             data_dir = join(data_dir, 'processed_data', 'test')
         data = []
-        i = 0
-        # Store in data the videos
+        # Store the videos in data
         for d1 in sorted(os.listdir(data_dir)):
             for d2 in sorted(os.listdir(join(data_dir, d1))):
-                i += 1
                 # Videos are lists of frame image files
                 images = sorted([
                     join(data_dir, d1, d2, img)

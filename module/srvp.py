@@ -54,23 +54,23 @@ class StochasticLatentResidualVideoPredictor(nn.Module):
         Number of layers in residual MLPs.
     nhx : int
         Size of frames encoding (dimension of the encoder output).
-    encoder : torch.nn.Module
+    encoder : module.conv.BaseEncoder
         Encoder.
-    decoder : torch.nn.Module
+    decoder : module.conv.BaseDecoder
         Decoder.
     w_proj : torch.nn.Module
         Permutation-invariant network (first part of the network computing the content variable).
     w_inf : torch.nn.Module
         Second and last part of the network computing the content variable.
-    q_y : torch.nn.Module
+    q_y : module.mlp.MLP
         Inference network for y_1.
-    inf_z : torch.nn.Module
+    inf_z : torch.nn.LSTM
         LSTM used for the inference of z.
-    q_z : torch.nn.Module
+    q_z : torch.nn.Linear
         Inference network for z, given the output of inf_z.
-    p_z : torch.nn.Module
+    p_z : module.mlp.MLP
         Prior network for z.
-    dynamics : torch.nn.Module
+    dynamics : module.mlp.MLP
         Residual MLP function for the dynamics computation.
     """
     def __init__(self, nx, nc, nf, nhx, ny, nz, skipco, nt_inf, nh_inf, nlayers_inf, nh_res, nlayers_res, archi):
@@ -105,6 +105,7 @@ class StochasticLatentResidualVideoPredictor(nn.Module):
             'dcgan' or 'vgg'. Name of the architecture to use for the encoder and the decoder.
         """
         super().__init__()
+
         # Attributes
         self.nx = nx
         self.nc = nc
@@ -119,7 +120,7 @@ class StochasticLatentResidualVideoPredictor(nn.Module):
         self.nhx = nhx
 
         # Modules
-        # -- Encoder - decoder
+        # -- Encoder and decoder
         self.encoder = conv.encoder_factory(archi, self.nx, self.nc, self.nhx, nf)
         self.decoder = conv.decoder_factory(archi, self.nx, self.nc, self.nh_inf + self.ny, nf, self.skipco)
         # -- Content
@@ -154,12 +155,21 @@ class StochasticLatentResidualVideoPredictor(nn.Module):
 
     def encode(self, x):
         """
-        Encodes a sequence of images and return the encoding and skip connections.
+        Frame-wise encoding of a sequence of images. Returns the encodings and skip connections.
 
         Parameters
         ----------
-        x : torch.Tensor
+        x : torch.*.Tensor
             Video / sequence of images to encode, of shape (length, batch, channels, width, height).
+
+        Returns
+        -------
+        torch.*.Tensor
+            Encoding of frames, of shape (length, batch, nhx), where length is the number of frames.
+        list
+            List of torch.*.Tensor representing skip connections. Must be None when skip connections are not allowed.
+            Skip connections are extracted from the last frame in testing mode, and from a random frame during
+            training.
         """
         nt, bsz, x_shape = x.shape[0], x.shape[1], x.shape[2:]
         # Flatten the temporal dimension (for convolution encoders)
@@ -168,7 +178,7 @@ class StochasticLatentResidualVideoPredictor(nn.Module):
         hx_flat, skips = self.encoder(x_flat, return_skip=True)
         # Reshape with temporal dimension
         hx = hx_flat.view(nt, bsz, self.nhx)
-        # Skip connection
+        # Skip connections
         if self.skipco:
             if self.training:
                 # When training, take a random frame to compute the skip connections
@@ -176,7 +186,7 @@ class StochasticLatentResidualVideoPredictor(nn.Module):
                 index = torch.arange(bsz).to(hx.device)
                 skips = [s.view(nt, bsz, *s.shape[1:])[t, index] for s in skips]
             else:
-                # When training, choose the last frame
+                # When testing, choose the last frame
                 skips = [s.view(nt, bsz, *s.shape[1:])[-1] for s in skips]
         else:
             skips = None
@@ -188,12 +198,17 @@ class StochasticLatentResidualVideoPredictor(nn.Module):
 
         Parameters
         ----------
-        w : torch.Tensor
-            Content variable.
-        y : torch.Tensor
-            Tensor representing a sequence of state variables, of shape (length, batch, dimension).
-        y : torch.Tensor
-            Skip connections.
+        w : torch.*.Tensor
+            Content variable of shape (batch, nh_inf).
+        y : torch.*.Tensor
+            Tensor representing a sequence of state variables, of shape (length, batch, ny).
+        skip : list
+            List of torch.*.Tensor representing skip connections. Must be None when skip connections are not allowed.
+
+        Returns
+        -------
+        torch.*.Tensor
+            Output sequence of frames, of shape (length, batch, channels, width, height).
         """
         nt, bsz = y.shape[0], y.shape[1]
         # Flatten the temporal dimension (for convolutional decoder)
@@ -213,12 +228,17 @@ class StochasticLatentResidualVideoPredictor(nn.Module):
 
     def infer_w(self, hx):
         """
-        Computes the content variable from the data.
+        Computes the content variable from the data with a permutation-invariant network.
 
         Parameters
         ----------
-        hx : torch.Tensor
-            Encoding of frames, of shape (length, batch, dimension).
+        hx : torch.*.Tensor
+            Encoding of frames, of shape (length, batch, nhx), where length is the number of frames.
+
+        Returns
+        -------
+        torch.*.Tensor
+            Output sequence of frames, of shape (length, batch, channels, width, height).
         """
         nt, bsz = hx.shape[0], hx.shape[1]
         if self.training:
@@ -241,8 +261,17 @@ class StochasticLatentResidualVideoPredictor(nn.Module):
 
         Parameters
         ----------
-        hx : torch.Tensor
-            Encoding of frames, of shape (length, batch, dimension).
+        hx : torch.*.Tensor
+            Encoding of frames, of shape (length, batch, nhx), where length is the number of conditioning frames used
+            to infer y_0.
+
+        Returns
+        -------
+        torch.*.Tensor
+            Initial state condition y_0, of shape (batch, ny).
+        torch.*.Tensor
+            Gaussian parameters of the approximate posterior for the initial state condition y_0, of shape
+            (batch, 2 * ny).
         """
         q_y_0_params = self.q_y(hx.permute(1, 0, 2).reshape(hx.shape[1], self.nt_inf * self.nhx))
         y_0 = utils.rsample_normal(q_y_0_params)
@@ -254,8 +283,15 @@ class StochasticLatentResidualVideoPredictor(nn.Module):
 
         Parameters
         ----------
-        hx : torch.tensor
-            t-th output of inf_z, if z is inferred from timestep t.
+        hx : torch.*.Tensor
+            Encoding of frame t, of shape (batch, nhx), so that z is inferred from timestep t.
+
+        Returns
+        -------
+        torch.*.Tensor
+            Inferred variable z, of shape (batch, nz).
+        torch.*.Tensor
+            Gaussian parameters of the approximate posterior of z, of shape (nt - 1, batch, 2 * nz).
         """
         q_z_params = self.q_z(hx)
         z = utils.rsample_normal(q_z_params)
@@ -267,19 +303,26 @@ class StochasticLatentResidualVideoPredictor(nn.Module):
 
         Parameters
         ----------
-        y_t : torch.tensor
-            Current state variable.
-        z_tp1 : torch.tensor
-            Current auxilizary random variable.
+        y_t : torch.*.Tensor
+            Current state variable, of shape (batch, ny).
+        z_tp1 : torch.*.Tensor
+            Current auxilizary random variable, of shape (batch, nz).
         dt : float
             Euler stepsize.
+
+        Returns
+        -------
+        torch.*.Tensor
+            Next state y_tp1 computed from the last state y_t and the current z variable z_tp1.
+        torch.*.Tensor
+            Residual applied to y_t to get the next state y_tp1.
         """
         res_inp = torch.cat([y_t, z_tp1], 1)
         res_tp1 = dt * self.dynamics(res_inp)
         y_tp1 = y_t + res_tp1
         return y_tp1, res_tp1
 
-    def generate(self, y_0, hx, nt, dt):
+    def generate(self, y_0, hx, nt, dt, remove_intermediate=True):
         """
         Generates a given number of state vectors (including the input initial condition).
 
@@ -287,32 +330,54 @@ class StochasticLatentResidualVideoPredictor(nn.Module):
 
         Parameters
         ----------
-        y_0 : torch.tensor
-            Initial state vector.
-        hx : torch.Tensor
-            Encoding of frames, of shape (length, batch, dimension).
+        y_0 : torch.*.Tensor
+            Initial state vector, of shape (batch, ny).
+        hx : torch.*.Tensor
+            Encoding of frames, of shape (length, batch, nhx), where length is the number of input frames.
         nt : int
-            Number of state vectors to generate.
+            Number of latent states to generate corresponding to integer times t, including y_0.
         dt : float
-            Euler stepsize.
+            Euler stepsize. Must be the inverse of an integer.
+        remove_intermediate : bool
+            If False, returns all computed latent states y. If True, only returns states y corresponding to integer
+            times (i.e., ignoring intermediate states obtained by the Euler method).
+
+        Returns
+        -------
+        torch.*.Tensor
+            Tensor representing a sequence of state variables, of shape (length, batch, ny), where length is either
+            nt or (nt - 1) / dt + 1, depending on the remove_intermediate argument.
+        torch.*.Tensor
+            Tensor representing a sequence of variables z, of shape (nt - 1, batch, ny).
+        torch.*.Tensor
+            Gaussian parameters of the approximate posterior of z, of shape (nt - 1, batch, 2 * nz).
+        torch.*.Tensor
+            Gaussian parameters of the prior distribution of z, of shape (nt - 1, batch, 2 * nz).
+        torch.*.Tensor
+            List of all computed residuals, of shape ((nt - 1) / dt, batch, ny).
         """
+        # Latent states and prior and posterior distributions storage
         y = [y_0]
         z, q_z_params, p_z_params = [], [], []
         res = []
+
         # First z inference step (LTSM on frame encodings)
         if hx is not None and len(hx) > 0:
             hx_z = self.inf_z(hx)[0]
         else:
             hx_z = []
+
         # Oversampling (number of state variable to generate per frame)
         assert (1 / dt).is_integer()
         oversampling = int(1 / dt)
+
+        y_tm1 = y_0  # Previous latent state
         t_data = 0
+        # Inference / prediction
         for t in np.linspace(dt, nt - 1, oversampling * (nt - 1)):
             prev_t_data = t_data
             t_data = int(math.ceil(t))  # Next, target timestep
             new_step = t_data != prev_t_data
-            y_tm1 = y[-1]
             if new_step:
                 # A new frame is seen and introduces a new z
                 p_z_t_params = self.p_z(y_tm1)
@@ -331,9 +396,14 @@ class StochasticLatentResidualVideoPredictor(nn.Module):
                 z_t = z[-1]
             # Residual step
             y_t, res_t = self._residual_step(y_tm1, z_t, dt)
+            # Update previous latent state
+            y_tm1 = y_t
             # Register tensors
-            y.append(y_t)
+            if not remove_intermediate or t.is_integer():
+                # Only keep latent states corresponding to integer times
+                y.append(y_t)
             res.append(res_t)
+
         # Re-package variables
         y = torch.stack(y)
         z = torch.stack(z) if len(z) > 0 else None
@@ -342,18 +412,50 @@ class StochasticLatentResidualVideoPredictor(nn.Module):
         res = torch.stack(res)
         return y, z, q_z_params, p_z_params, res
 
-    def forward(self, x, nt, dt):
+    def forward(self, x, nt, dt, remove_intermediate=True):
         """
         Applies the model.
 
         Parameters
         ----------
-        x : torch.Tensor
+        x : torch.*.Tensor
             Input data of shape (length, batch, channels, width, height) with float values lying in [0, 1].
         nt : int
-            Number of images to produce, starting with the auto-encoding of x[0] (including reconstructions).
+            Number of frames to generate corresponding to integer times t, starting with the auto-encoding of x[0]
+            and including reconstructions.
         dt : float
-            Euler stepsize.
+            Euler stepsize.  Must be the inverse of an integer.
+        remove_intermediate : bool
+            If False, returns all computed latent states y and frames x. If True, only returns states y and frames x
+            corresponding to integer times (i.e., ignoring intermediate frames obtained by the Euler method).
+
+        Returns
+        -------
+        torch.*.Tensor
+            Tensor representing the output video, of shape (length, batch, channels, width, height) with float values
+            lying in [0, 1], where length is either nt or (nt - 1) / dt + 1, depending on the remove_intermediate
+            argument.
+            Its first frames correspond to the reconstruction of the first frames of the input video x (including
+            intermediate frames if remove_intermediate is True), and the remaining frames are predictions conditioned
+            with x.
+        torch.*.Tensor
+            Tensor representing a sequence of state variables, of shape (length, batch, ny), where length is either
+            nt or (nt - 1) / dt + 1, depending on the remove_intermediate argument.
+        torch.*.Tensor
+            Tensor representing a sequence of variables z, of shape (nt - 1, batch, ny).
+        torch.*.Tensor
+            Gaussian parameters of the approximate posterior of z, of shape (nt - 1, batch, 2 * nz).
+        torch.*.Tensor
+            Output sequence of frames, of shape (length, batch, channels, width, height).
+        torch.*.Tensor
+            Gaussian parameters of the approximate posterior for the initial state condition y_0, of shape
+            (batch, 2 * ny).
+        torch.*.Tensor
+            Gaussian parameters of the approximate posterior of z, of shape (nt - 1, batch, 2 * nz).
+        torch.*.Tensor
+            Gaussian parameters of the prior distribution of z, of shape (nt - 1, batch, 2 * nz).
+        torch.*.Tensor
+            List of all computed residuals, of shape ((nt - 1) / dt, batch, ny).
         """
         # Encode images into vectors, and extract a skip connection
         hx, skipco = self.encode(x)
@@ -362,7 +464,7 @@ class StochasticLatentResidualVideoPredictor(nn.Module):
         # Infer y_0
         y_0, q_y_0_params = self.infer_y(hx[:self.nt_inf])
         # Residual temporal model
-        y, z, q_z_params, p_z_params, res = self.generate(y_0, hx, nt, dt)
+        y, z, q_z_params, p_z_params, res = self.generate(y_0, hx, nt, dt, remove_intermediate=remove_intermediate)
         # Decode
         x_ = self.decode(w, y, skipco)
         return x_, y, z, w, q_y_0_params, q_z_params, p_z_params, res

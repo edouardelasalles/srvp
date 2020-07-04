@@ -22,10 +22,12 @@ from tqdm import tqdm, trange
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser('''
-        Generates the Human3.6M testing set from the testing videos by extracting fixed-length sequences.
-        Videos are saved in the npz format, like the training videos.
-        ''')
+    parser = argparse.ArgumentParser(
+        prog='Human3.6M testing set generation.',
+        description='Generates the Human3.6M testing set from the testing videos by extracting fixed-length \
+                     sequences. Videos are saved as npz files, like the training videos.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument('--data_dir', type=str, metavar='DIR', required=True,
                         help='Folder where the dataset is stored and the testing set will be saved.')
     parser.add_argument('--size', type=int, metavar='SIZE', default=1000,

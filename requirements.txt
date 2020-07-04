@@ -2,6 +2,7 @@
 
 configargparse==1.0
 imageio==2.6.1
+imageio-ffmpeg==0.3.0
 numpy==1.18.1
 pillow==7.0.0
 torch==1.4.0

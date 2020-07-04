@@ -90,10 +90,12 @@ def generate_from_mp4(data_dir, image_size, train=True):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser('''
-        Generates training and testing videos for the Human3.6M dataset from the original videos,
-        and stores them in folders \'train\' and \'test\' in the same directory as npz files.
-        ''')
+    parser = argparse.ArgumentParser(
+        prog='Human3.6M preprocessing.',
+        description='Generates training and testing videos for the Human3.6M dataset from the original videos, and \
+                     stores them in folders `train` and `test` in the same directory as npz files.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument('--data_dir', type=str, metavar='DIR', required=True,
                         help='Folder where videos from the original dataset are stored.')
     parser.add_argument('--image_size', type=int, metavar='SIZE', default=64,

@@ -20,6 +20,15 @@ def get_seq(data_dir, dname):
         Directory where original videos are saved.
     dname : stre
         'train' or 'test'. Determines whether training or testing videos should be processed.
+
+    Yields
+    -------
+    str
+        File name from which the video was extracted.
+    int
+        Video index in the file from which it was extracted.
+    list
+        List of PIL.Image.Image objects corresponding to frames of the video.
     """
     # Get list of video files
     data_dir = os.path.join(data_dir, 'softmotion30_44k', dname)
@@ -35,7 +44,7 @@ def get_seq(data_dir, dname):
             image_seq = []
             # Get all frames of the video
             for i in range(30):
-                image_name = str(i) + '/image_aux1/encoded'
+                image_name = os.path.join(str(i), 'image_aux1', 'encoded')
                 byte_str = example.features.feature[image_name].bytes_list.value[0]
                 img = Image.frombytes('RGB', (64, 64), byte_str)
                 image_seq.append(img)
@@ -47,7 +56,9 @@ def convert_data(data_dir, dname):
     """
     Preprocesses videos from the BAIR dataset in the input directory.
 
-    Processed videos are saved in separate directories; each video frame is extracted in a .png file.
+    Processed videos are saved in separate directories. They are of the form 'filename/index', where filename is the
+    file from which the video was extracted, and index in the index of the video in that file. Each video frame is
+    extracted in a .png file.
 
     Parameters
     ----------
@@ -71,11 +82,13 @@ def convert_data(data_dir, dname):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser('''
-        Generates training and testing videos for the BAIR dataset from the original videos,
-        and stores them in folders \'train\' and \'test\' in the same directory.
-        Each video frame is saved as a .png file.
-        ''')
+    parser = argparse.ArgumentParser(
+        prog='BAIR preprocessing.',
+        description='Generates training and testing videos for the BAIR dataset from the original videos, and stores \
+                     them in folders `train` and `test` in the same directory. Each video frame is saved as a png \
+                     file.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument('--data_dir', type=str, metavar='DIR', required=True,
                         help='Folder where videos from the original dataset are stored.')
     args = parser.parse_args()

@@ -26,9 +26,12 @@ from data.mmnist import MovingMNIST
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser('''
-        Generates the Moving MNIST testing set. Videos and latent space (position, speed) are saved in an npz file.
-        ''')
+    parser = argparse.ArgumentParser(
+        prog='Moving MNIST testing set generation.',
+        description='Generates the Moving MNIST testing set. Videos and latent space (position, speed) are saved in \
+                     an npz file.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument('--data_dir', type=str, metavar='DIR', required=True,
                         help='Folder where the testing set will be saved.')
     parser.add_argument('--seq_len', type=int, metavar='LEN', default=100,
@@ -77,10 +80,12 @@ if __name__ == "__main__":
                 sx, sy, _, _ = trajectory[t]
                 x[t, sx:sx + img.shape[0], sy:sy + img.shape[1]] += img
         x[x > 255] = 255
+        # Register video and other information
         test_videos.append(x.astype(np.uint8))
         test_latents.append(np.array(latents))
         test_labels.append(np.array(labels).astype(np.uint8))
         test_objects.append(np.array(objects))
+    # Stack computed videos and other information
     test_videos = np.array(test_videos, dtype=np.uint8).transpose(1, 0, 2, 3)
     test_latents = np.array(test_latents).transpose(2, 0, 1, 3)
     test_labels = np.array(test_labels, dtype=np.uint8)

@@ -65,9 +65,9 @@ class KTH(VideoDataset):
 
     def __len__(self):
         if self.train:
-            # Arbitrary number
+            # Arbitrary number.
             # The number is a trade-off for max efficiency.
-            # If too low, it is not good for batch size and multi threaded dataloader.
+            # If too low, it is not good for batch size and multi-threaded dataloader.
             # If too high, it is not good for shuffling and sampling.
             return 500000
         return len(self.data)
@@ -113,6 +113,10 @@ class KTH(VideoDataset):
             Number of frames to produce.
         train : bool
             Whether to use the training or testing dataset.
+
+        Returns
+        -------
+        data.kth.KTH
         """
         # Select the right fold (train / test)
         if train:

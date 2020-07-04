@@ -28,6 +28,12 @@ classes = ['boxing', 'handclapping', 'handwaving', 'jogging', 'running', 'walkin
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        prog='KTH testing set generation.',
+        description='Generates the KTH testing set from the testing videos by extracting fixed-length sequences. \
+                     Videos as well as action and subject information are saved in an npz file.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser = argparse.ArgumentParser('''
         Generates the KTH testing set from the testing videos by extracting fixed-length sequences.
         Videos as well as action and subject information are saved in an .npz file.
@@ -71,7 +77,6 @@ if __name__ == "__main__":
         persons.append(person)
         actions.append(action)
     sequences = np.array(sequences)
-    print(sequences.shape)
 
     # Save the dataset
     save_file = join(args.data_dir, f'svg_test_set_{args.seq_len}.npz')
