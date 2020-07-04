@@ -84,7 +84,7 @@ def create_args():
     model_p.add('--n_euler_steps', type=int, metavar='STEPS', default=1,
                 help='Number of Euler step per frame to perform during training and validation.')
     model_p.add('--nt_inf', type=int, metavar='STEPS', required=True,
-                help='Number of time steps used to infer y at t = 1.')
+                help='Number of time steps used to infer y at t = 1 (k).')
     model_p.add('--obs_scale', type=float, metavar='VAR', default=1,
                 help='Standard deviation of the distribution of observations.')
     model_p.add('--archi', type=str, metavar='ARCH', default='dcgan', choices=ARCH_TYPES,
