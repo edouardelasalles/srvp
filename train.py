@@ -155,7 +155,7 @@ def evaluate(forward_fn, val_loader, device, opt):
     global_psnr = 0  # Sum of all computed prediction PSNR
     with torch.no_grad():
         for j, batch in enumerate(val_loader):
-            # Stop when the given number of iterations have been done
+            # Stop when the given number of iterations is reached
             if j >= opt.n_iter_test:
                 break
 
@@ -172,7 +172,7 @@ def evaluate(forward_fn, val_loader, device, opt):
                 all_x.append(forward_fn(x_inf, nt, dt=1 / opt.n_euler_steps)[0].cpu())
             all_x = torch.stack(all_x)
 
-            # Sort predictions per PSNR and select the closesto one to the ground truth
+            # Sort predictions with respect to PSNR and select the closest one to the ground truth
             all_mse = torch.mean(F.mse_loss(all_x, x.cpu().expand_as(all_x), reduction='none'), dim=[4, 5])
             all_psnr = torch.mean(10 * torch.log10(1 / all_mse), dim=[1, 3])
             _, idx_best = all_psnr.max(0)
