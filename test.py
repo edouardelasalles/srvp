@@ -329,7 +329,7 @@ if __name__ == '__main__':
         formatter_class=configargparse.ArgumentDefaultsHelpFormatter
     )
     p.add('--xp_dir', type=str, metavar='DIR', required=True,
-          help='Directory where the model configuration file are saved.')
+          help='Directory where the model and its configuration file are saved.')
     p.add('--data_dir', type=str, metavar='DIR', required=True,
           help='Directory where the dataset is saved.')
     p.add('--lpips_dir', type=str, metavar='DIR', required=True,
