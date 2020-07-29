@@ -60,6 +60,17 @@ class KTH(VideoDataset):
         self.seq_len = seq_len
         self.train = train
 
+    def change_seq_len(self, seq_len):
+        """
+        Changes the length of sequences in the dataset.
+
+        Parameters
+        ----------
+        seq_len : int
+            New sequence length.
+        """
+        self.seq_len = seq_len
+
     def _filter(self, data):
         return KTH(data, self.nx, self.seq_len, self.train)
 

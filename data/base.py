@@ -132,6 +132,17 @@ class VideoDataset(object):
         # Filter
         return self._filter(data)
 
+    def change_seq_len(self, seq_len):
+        """
+        Changes the length of sequences in the dataset.
+
+        Parameters
+        ----------
+        seq_len : int
+            New sequence length.
+        """
+        raise NotImplementedError
+
     def __len__(self):
         return len(self.data)
 

@@ -64,6 +64,18 @@ class Human(VideoDataset):
         self.subsampling = subsampling
         self.actual_seq_len = (seq_len - 1) * subsampling + 1
 
+    def change_seq_len(self, seq_len):
+        """
+        Changes the length of sequences in the dataset.
+
+        Parameters
+        ----------
+        seq_len : int
+            New sequence length.
+        """
+        self.seq_len = seq_len
+        self.actual_seq_len = (seq_len - 1) * self.subsampling + 1
+
     def _filter(self, data):
         return Human(data, self.nx, self.seq_len, self.subsampling, self.train)
 

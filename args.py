@@ -58,9 +58,11 @@ def create_args():
     # Apex
     apex_p = p.add_argument_group(title='Apex', description='Apex-related options.')
     apex_p.add('--amp_opt_lvl', type=str, metavar='OPT_LVL', default='O1', choices=AMP_OPT_LEVELS,
-               help='Mixed precision optimization level (see Apex documentation).')
+               help='Mixed precision optimization level for Apex (see Apex documentation).')
     apex_p.add('--keep_batchnorm_fp32', action='store_true', default=None,
-               help='Whether to keep batch norm computed on 32 bits (see Apex documentation).')
+               help='Whether to keep batch norm computed on 32 bits with Apex (see Apex documentation).')
+    apex_p.add('--apex_verbose', action='store_true',
+               help='Activates Apex log output.')
 
     # Distributed training
     distr_p = p.add_argument_group(title='Distributed',
@@ -157,5 +159,7 @@ def create_args():
                help='Number of conditioning frames at test time. Must not be smaller that nt_inf.')
     eval_p.add('--n_samples_test', type=int, metavar='NB', default=100,
                help='Number of predictions to perform for the comparison with the ground truth during validation.')
+    data_p.add('--seq_len_test', type=int, metavar='LEN', default=None,
+               help='Length of validation sequences. If None, it is chosen equal to seq_len.')
 
     return p

@@ -186,7 +186,7 @@ def main(opt):
     print('Loading data...')
     xp_config.data_dir = opt.data_dir
     xp_config.seq_len = nt_test
-    dataset = data.load_dataset(xp_config, train=False)
+    dataset = data.load_dataset(xp_config, False)
     testset = dataset.get_fold('test')
     test_loader = DataLoader(testset, batch_size=opt.batch_size, collate_fn=data.collate_fn, pin_memory=True)
 

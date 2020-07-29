@@ -168,12 +168,13 @@ def evaluate(forward_fn, val_loader, device, opt):
 
             # Perform a given number of predictions per video
             all_x = []
-            for _ in range(opt.n_samples_test - 1):
+            for _ in range(opt.n_samples_test):
                 all_x.append(forward_fn(x_inf, nt, dt=1 / opt.n_euler_steps)[0].cpu())
             all_x = torch.stack(all_x)
 
             # Sort predictions with respect to PSNR and select the closest one to the ground truth
-            all_mse = torch.mean(F.mse_loss(all_x, x.cpu().expand_as(all_x), reduction='none'), dim=[4, 5])
+            x_cpu = x.cpu()
+            all_mse = torch.mean(F.mse_loss(all_x, x_cpu.expand_as(all_x), reduction='none'), dim=[4, 5])
             all_psnr = torch.mean(10 * torch.log10(1 / all_mse), dim=[1, 3])
             _, idx_best = all_psnr.max(0)
             x_ = all_x[idx_best, :, torch.arange(n_b).to(device)].transpose(0, 1).contiguous().to(device)
@@ -199,7 +200,6 @@ def main(opt):
     ##################################################################################################################
     # Setup
     ##################################################################################################################
-    opt.hostname = os.uname()[1]
     # Device handling (CPU, GPU, multi GPU)
     if opt.device is None:
         device = torch.device('cpu')
@@ -239,9 +239,12 @@ def main(opt):
     ##################################################################################################################
     print('Loading data...')
     # Load data
-    dataset = data.load_dataset(opt, train=True)
+    dataset = data.load_dataset(opt, True)
     trainset = dataset.get_fold('train')
     valset = dataset.get_fold('val')
+    # Change validation sequence length, if specified
+    if opt.seq_len_test is not None:
+        valset.change_seq_len(opt.seq_len_test)
 
     # Handle random seed for dataloader workers
     def worker_init_fn(worker_id):
@@ -295,7 +298,8 @@ def main(opt):
         scaler = torch_amp.GradScaler()
     if opt.apex_amp:
         model, optimizer = apex_amp.initialize(model, optimizer, opt_level=opt.amp_opt_lvl,
-                                               keep_batchnorm_fp32=opt.keep_batchnorm_fp32)
+                                               keep_batchnorm_fp32=opt.keep_batchnorm_fp32,
+                                               verbosity=opt.apex_verbose)
 
     ##################################################################################################################
     # Multi GPU
@@ -319,7 +323,7 @@ def main(opt):
     # Progress bar
     if opt.local_rank == 0:
         pb = tqdm(total=opt.n_iter, ncols=0)
-    # Current and best model evaluations score
+    # Current and best model evaluation metric (lower is better)
     val_metric = None
     best_val_metric = None
     try:
@@ -338,7 +342,7 @@ def main(opt):
                 model.train()
                 # Optimization step on batch
                 # Allow PyTorch's mixed-precision computations if required while ensuring retrocompatibilty
-                with (torch_amp.autocast() if opt.torch_amp else nullcontext()):
+                with (torch_amp.autocast(enabled=False) if opt.torch_amp else nullcontext()):
                     loss, nll, kl_y_0, kl_z = train(forward_fn, optimizer, scaler, batch, device, opt)
 
                 # Learning rate scheduling
@@ -361,8 +365,8 @@ def main(opt):
 
                 # Progress bar
                 if opt.local_rank == 0:
-                    pb.set_postfix(loss=loss, disto=nll, rate_y_0=kl_y_0, rate_z=kl_z, val_score=val_metric,
-                                   best_val_score=best_val_metric, refresh=False)
+                    pb.set_postfix({'loss': loss, 'nll': nll, 'kl_y_0': kl_y_0, 'kl_z': kl_z, 'val_metric': val_metric,
+                                    'best_val_metric': best_val_metric}, refresh=False)
                     pb.update()
 
     except KeyboardInterrupt:

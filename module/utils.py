@@ -52,8 +52,7 @@ def init_weight(m, init_type='normal', init_gain=0.02):
     """
     Initializes the input module with the given parameters.
 
-    Only deals with Conv2d, ConvTranspose2d and Linear layers. Two-dimensional batch normalizations are initialized
-    as well with unit weight and zero bias.
+    Only deals with `Conv2d`, `ConvTranspose2d`, `Linear` and `BatchNorm2d` layers.
 
     Parameters
     ----------
@@ -61,7 +60,7 @@ def init_weight(m, init_type='normal', init_gain=0.02):
         Module to initialize.
     init_type : str
         'normal', 'xavier', 'kaiming', or 'orthogonal'. Orthogonal initialization types for convolutions and linear
-        operations.
+        operations. Ignored for batch normalization which uses a normal initialization.
     init_gain : float
         Gain to use for the initialization.
     """

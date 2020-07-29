@@ -362,7 +362,7 @@ class StochasticLatentResidualVideoPredictor(nn.Module):
         res = []
 
         # First z inference step (LTSM on frame encodings)
-        if hx is not None and len(hx) > 0:
+        if len(hx) > 0:
             hx_z = self.inf_z(hx)[0]
         else:
             hx_z = []

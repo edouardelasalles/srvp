@@ -1,6 +1,12 @@
 # Stochastic Latent Residual Video Prediction (SRVP)
 
-Official implementation of the paper *Stochastic Latent Residual Video Prediction* (Jean-Yves Franceschi,* Edouard Delasalles,* Mickael Chen, Sylvain Lamprier, Patrick Gallinari), accepted at ICML 2020.
+Official implementation of the paper *Stochastic Latent Residual Video Prediction* (Jean-Yves Franceschi,* Edouard Delasalles,* Mickael Chen, Sylvain Lamprier, Patrick Gallinari), accepted and presented at ICML 2020.
+
+
+## [Article](https://proceedings.icml.cc/book/3249.pdf)
+
+
+## [Presentation](https://icml.cc/virtual/2020/poster/5773)
 
 
 ## [Preprint](https://arxiv.org/abs/2002.09219)
@@ -14,14 +20,14 @@ Official implementation of the paper *Stochastic Latent Residual Video Predictio
 
 ## Requirements
 
-All models were trained with Python 3.7.6 and CUDA 10.1 on PyTorch 1.4.0.
+All models were trained with Python 3.7.6 and PyTorch 1.4.0 using CUDA 10.1.
 
-A list of requirements of Python dependencies is available in the `requirements.txt` file.
+A list required Python packages is available in the `requirements.txt` file.
 
 To speed up training, we recommend to activate mixed-precision training in the options, whose performance gains were tested on the most recent Nvidia GPU architectures (starting from Volta).
-We originally used Nvidia's [Apex](https://nvidia.github.io/apex/) (v0.1) in mixed-precision mode (`O1`).
+We used Nvidia's [Apex](https://nvidia.github.io/apex/) (v0.1) in mixed-precision mode (`O1`) to produce results reported in the paper.
 We also integrated PyTorch's more recent [mixed-precision training package](https://pytorch.org/docs/stable/amp.html) (made available in PyTorch 1.6.0), which should give similar results.
-This is, however, an experimental feature and remains to be tested.
+This is, however, an experimental feature and we cannot guarantee that it achieves the same results as Apex.
 
 
 ## Datasets
@@ -58,7 +64,7 @@ python preprocessing/kth/make_test_set.py --data_dir $DIR
 
 ### Human3.6M
 
-This dataset can be downloaded at [http://vision.imar.ro/human3.6m/description.php](http://vision.imar.ro/human3.6m/description.php), after obtaining the access from its owners.
+This dataset can be downloaded at [http://vision.imar.ro/human3.6m/description.php](http://vision.imar.ro/human3.6m/description.php), after obtaining access from its owners.
 Videos for every subject are included in `.tgz` archives. Each of these archives should be extracted in the same folder.
 
 To preprocess the dataset in order to use it for training and testing, these videos should be processed using the following command:
@@ -94,7 +100,7 @@ In order to launch training on multiple GPUs, launch the following command:
 ```bash
 OMP_NUM_THREADS=$NUMWORKERS python -m torch.distributed.launch --nproc_per_node=$NBDEVICES train.py --device $DEVICE1 $DEVICE2 ...
 ```
-followed by the training options, where `$NBDEVICES` is the number of GPUs to be used, `$NUMWORKERS` is the number of processes per GPU to use for data loading (should be equal to the value given to the option `n_workers`), and `$DEVICE1 $DEVICE2 ...` is a list of GPU indices.
+followed by the training options, where `$NBDEVICES` is the number of GPUs to be used, `$NUMWORKERS` is the number of processes per GPU to use for data loading (should be equal to the value given to the option `n_workers`), and `$DEVICE1 $DEVICE2 ...` is a list of GPU indices whose length in equal to `$NBDEVICES`.
 Training can be accelerated using options `--apex_amp` or `--torch_amp` (see [requirements](#Requirements)).
 
 Data directory (`$DATA_DIR`) and saving path (`$SAVE_DIR`) must be given using options `--data_dir $DATA_DIR --save_path $SAVE_DIR`.
@@ -110,11 +116,11 @@ Training parameters are given by the following options:
 ```
 - for KTH:
 ```
---ny 50 --nz 50 --n_euler_steps 2 --res_gain 1.2 --archi vgg --skipco --nt_cond 10 --nt_inf 3 --obs_scale 0.2 --batch_size 100 --dataset kth --nc 1 --seq_len 20 --lr_scheduling_burnin 150000 --lr_scheduling_n_iter 50000 --val_interval 5000 --n_iter_test 16
+--ny 50 --nz 50 --n_euler_steps 2 --res_gain 1.2 --archi vgg --skipco --nt_cond 10 --nt_inf 3 --obs_scale 0.2 --batch_size 100 --dataset kth --nc 1 --seq_len 20 --lr_scheduling_burnin 150000 --lr_scheduling_n_iter 50000 --val_interval 5000 --seq_len_test 30
 ```
 - for Human3.6M:
 ```
---ny 50 --nz 50 --n_euler_steps 2 --res_gain 1.2 --archi vgg --skipco --nt_cond 8 --nt_inf 3 --obs_scale 0.2 --batch_size 100 --dataset human --nc 3 --seq_len 16 --lr_scheduling_burnin 325000 --lr_scheduling_n_iter 25000 --val_interval 20000 --batch_size_test 8
+--ny 50 --nz 50 --n_euler_steps 2 --res_gain 1.2 --archi vgg --skipco --nt_cond 8 --nt_inf 3 --obs_scale 0.2 --batch_size 100 --dataset human --nc 3 --seq_len 16 --lr_scheduling_burnin 325000 --lr_scheduling_n_iter 25000 --val_interval 20000 --batch_size_test 8 --seq_len_test 53
 ```
 - for BAIR:
 ```
@@ -139,7 +145,7 @@ where `$XPDIR` is a directory containing a checkpoint and the corresponding `jso
 
 To run the evaluation on GPU, use the option `--device $DEVICE`.
 
-Model file name can be specified using the option `--model_name $MODEL_NAME` (for instance, to load best models on the evaluation sets of KTH and HUMAN3.6M: `--model_name model_best.pt`).
+Model file name can be specified using the option `--model_name $MODEL_NAME` (for instance, to load best models selected on the evaluation sets of KTH and Human3.6M: `--model_name model_best.pt`).
 
 PSNR, SSIM and LPIPS results reported in the paper were obtained with the following options:
 - for stochastic Moving MNIST:
