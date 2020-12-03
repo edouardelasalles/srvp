@@ -3,7 +3,7 @@
 Official implementation of the paper *Stochastic Latent Residual Video Prediction* (Jean-Yves Franceschi,* Edouard Delasalles,* Mickael Chen, Sylvain Lamprier, Patrick Gallinari), accepted and presented at ICML 2020.
 
 
-## [Article](https://proceedings.icml.cc/book/3249.pdf)
+## [Article](http://proceedings.mlr.press/v119/franceschi20a.html)
 
 
 ## [Presentation](https://icml.cc/virtual/2020/poster/5773)
@@ -141,7 +141,7 @@ To evaluate a trained model, the script `test.py` should be used as follows:
 ```bash
 python test.py --data_dir $DATADIR --xp_dir $XPDIR --lpips_dir $LPIPSDIR
 ```
-where `$XPDIR` is a directory containing a checkpoint and the corresponding `json` configuration file (see the pretrained models for an example), `$DATADIR` is the directory containing the test set, and `$LPIPSDIR` is a directory where [LPIPS weights](https://github.com/richzhang/PerceptualSimilarity/tree/master/models/weights) (from the official repository of [*The Unreasonable Effectiveness of Deep Features as a Perceptual Metric*](https://github.com/richzhang/PerceptualSimilarity)) are downloaded.
+where `$XPDIR` is a directory containing a checkpoint and the corresponding `json` configuration file (see the pretrained models for an example), `$DATADIR` is the directory containing the test set, and `$LPIPSDIR` is a directory where [LPIPS weights](https://github.com/richzhang/PerceptualSimilarity/tree/master/lpips/weights) (from the official repository of [*The Unreasonable Effectiveness of Deep Features as a Perceptual Metric*](https://github.com/richzhang/PerceptualSimilarity)) are downloaded.
 
 To run the evaluation on GPU, use the option `--device $DEVICE`.
 
