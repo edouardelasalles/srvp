@@ -37,11 +37,11 @@ This is, however, an experimental feature and we cannot guarantee that it achiev
 During training, this dataset is generated on the fly.
 In order to generate a consistent testing set in an `.npz` file, the following commands should be executed:
 ```bash
-python -m preprocessing.mmnist.make_test_set --data_dir $DIR --seq_len 100
+python -m preprocessing.mmnist.make_test_set --data_dir $DIR --seq_len 25
 ```
 for the stochastic version of the dataset, or
 ```bash
-python -m preprocessing.mmnist.make_test_set --data_dir $DIR --seq_len 25
+python -m preprocessing.mmnist.make_test_set --data_dir $DIR --deterministic --seq_len 100
 ```
 for the deterministic version, where `$DIR` is the directory where the testing set should be saved.
 
@@ -150,7 +150,7 @@ Model file name can be specified using the option `--model_name $MODEL_NAME` (fo
 PSNR, SSIM and LPIPS results reported in the paper were obtained with the following options:
 - for stochastic Moving MNIST:
 ```bash
-python test.py --data_dir $DATADIR --xp_dir $XPDIR --lpips_dir $LPIPSDIR --nt_gen 30
+python test.py --data_dir $DATADIR --xp_dir $XPDIR --lpips_dir $LPIPSDIR --nt_gen 25
 ```
 - for deterministic Moving MNIST:
 ```bash
