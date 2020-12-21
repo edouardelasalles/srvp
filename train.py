@@ -149,7 +149,7 @@ def evaluate(forward_fn, val_loader, device, opt):
         Average negative prediction PSNR.
     """
     inf_len = opt.nt_cond
-    assert opt.n_iter_test <= len(val_loader)
+    assert val_loader is not None and opt.n_iter_test <= len(val_loader)
 
     n = 0  # Total number of evaluation videos, updated in the validation loop
     global_psnr = 0  # Sum of all computed prediction PSNR
@@ -261,7 +261,7 @@ def main(opt):
                               worker_init_fn=worker_init_fn)
     val_loader = DataLoader(valset, batch_size=opt.batch_size_test, collate_fn=data.collate_fn,
                             num_workers=opt.n_workers, shuffle=True, drop_last=True, pin_memory=True,
-                            worker_init_fn=worker_init_fn)
+                            worker_init_fn=worker_init_fn) if opt.local_rank == 0 else None
 
     ##################################################################################################################
     # Model
