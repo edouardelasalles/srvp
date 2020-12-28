@@ -174,3 +174,13 @@ Please also refer to the help message of `test.py`:
 ```bash
 python test.py --help
 ```
+
+
+
+## Troubleshooting
+
+[It has been reported](https://github.com/edouardelasalles/srvp/issues/8) that using Apex mixed-precision training in specific configurations may lead to an excessive RAM usage due to [this memory leak issue in Apex](https://github.com/NVIDIA/apex/issues/634).
+We refer to the links hereinabove for solutions to this problem.
+
+
+Please feel free to create an issue for any other problem that you might encounter using our code.
