@@ -105,19 +105,19 @@ def train(forward_fn, optimizer, scaler, batch, device, opt):
     # Batch average
     loss /= n
 
-    # Backward and weight updated
+    # Backward and weight update
     if opt.torch_amp:
-        scaler.scale(loss).backward()
-        scaler.step(optimizer)
-        scaler.update()
+        with torch_amp.autocast(enabled=False):
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
     else:
-        with (torch_amp.autocast(enabled=False) if opt.torch_amp else nullcontext()):
-            if opt.apex_amp:
-                with apex_amp.scale_loss(loss, optimizer) as scaled_loss:
-                    scaled_loss.backward()
-            else:
-                loss.backward()
-            optimizer.step()
+        if opt.apex_amp:
+            with apex_amp.scale_loss(loss, optimizer) as scaled_loss:
+                scaled_loss.backward()
+        else:
+            loss.backward()
+        optimizer.step()
 
     # Logs
     with torch.no_grad():
