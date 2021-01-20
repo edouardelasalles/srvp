@@ -111,12 +111,13 @@ def train(forward_fn, optimizer, scaler, batch, device, opt):
         scaler.step(optimizer)
         scaler.update()
     else:
-        if opt.apex_amp:
-            with apex_amp.scale_loss(loss, optimizer) as scaled_loss:
-                scaled_loss.backward()
-        else:
-            loss.backward()
-        optimizer.step()
+        with (torch_amp.autocast(enabled=False) if opt.torch_amp else nullcontext()):
+            if opt.apex_amp:
+                with apex_amp.scale_loss(loss, optimizer) as scaled_loss:
+                    scaled_loss.backward()
+            else:
+                loss.backward()
+            optimizer.step()
 
     # Logs
     with torch.no_grad():
@@ -342,7 +343,7 @@ def main(opt):
                 model.train()
                 # Optimization step on batch
                 # Allow PyTorch's mixed-precision computations if required while ensuring retrocompatibilty
-                with (torch_amp.autocast(enabled=True) if opt.torch_amp else nullcontext()):
+                with (torch_amp.autocast() if opt.torch_amp else nullcontext()):
                     loss, nll, kl_y_0, kl_z = train(forward_fn, optimizer, scaler, batch, device, opt)
 
                 # Learning rate scheduling
