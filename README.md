@@ -98,9 +98,9 @@ python preprocessing/bair/convert.py --data_dir $DIR
 
 In order to launch training on multiple GPUs, launch the following command:
 ```bash
-OMP_NUM_THREADS=$NUMWORKERS python -m torch.distributed.launch --nproc_per_node=$NBDEVICES train.py --device $DEVICE1 $DEVICE2 ...
+OMP_NUM_THREADS=$NUMWORKERS python -m torch.distributed.launch --nproc_per_node=$NBDEVICES train.py --device $DEVICE1 $DEVICE2 --seed $SEED ...
 ```
-followed by the training options, where `$NBDEVICES` is the number of GPUs to be used, `$NUMWORKERS` is the number of processes per GPU to use for data loading (should be equal to the value given to the option `n_workers`), and `$DEVICE1 $DEVICE2 ...` is a list of GPU indices whose length in equal to `$NBDEVICES`.
+followed by the training options, where `$NBDEVICES` is the number of GPUs to be used, `$NUMWORKERS` is the number of processes per GPU to use for data loading (should be equal to the value given to the option `n_workers`), `$DEVICE1 $DEVICE2 ...` is a list of GPU indices whose length in equal to `$NBDEVICES`, and `$SEED` is the chosen random seed.
 Training can be accelerated using options `--apex_amp` or `--torch_amp` (see [requirements](#Requirements)).
 
 Data directory (`$DATA_DIR`) and saving path (`$SAVE_DIR`) must be given using options `--data_dir $DATA_DIR --save_path $SAVE_DIR`.

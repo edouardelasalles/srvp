@@ -213,6 +213,7 @@ def main(opt):
         # In the case of multi GPU: sets up distributed training
         if opt.n_gpu > 1 or opt.local_rank > 0:
             torch.distributed.init_process_group(backend='nccl')
+            assert opt.seed is not None
             # Since we are in distributed mode, divide batch size by the number of GPUs
             assert opt.batch_size % opt.n_gpu == 0
             opt.batch_size = opt.batch_size // opt.n_gpu
